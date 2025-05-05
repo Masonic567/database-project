@@ -116,7 +116,12 @@ def getStudentLoan(loan_id: int):
 
 def getMortgage(house_address: str):
     return connection.cursor().execute(
-        'SELECT * FROM Mortgate WHERE address = :addr', addr = house_address
+        'SELECT * FROM Mortgage WHERE address = :addr', addr = house_address
+    ).fetchone()
+
+def getLoans(client_id: int):
+    return connection.cursor().execute(
+        'SELECT * FROM Client NATURAL JOIN Auto_Loan NATURAL JOIN Personal_Loan NATURAL JOIN Mortgage NATURAL JOIN Student_Loan WHERE client_id = :id', id = client_id
     ).fetchone()
 
 def dropTables():
