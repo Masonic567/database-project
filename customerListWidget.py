@@ -1,6 +1,7 @@
-from PyQt6.QtWidgets import QScrollArea, QListWidget, QListWidgetItem, QWidget, QPushButton, QHBoxLayout, QVBoxLayout
+from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QWidget, QPushButton, QHBoxLayout, QVBoxLayout
 import database
 from enterInfoDialog import enterInfoDialog
+from searchBarWidget import searchBarWidget
 
 class customerListWidget(QWidget):
     def __init__(self, parent = None):
@@ -21,6 +22,9 @@ class customerListWidget(QWidget):
         bottomLayout.addWidget(deleteButton)
         bottomLayout.addWidget(addButton)
         layout.addLayout(bottomLayout)
+
+        searchBar = searchBarWidget(self, 'Search Cust. ID', lambda x: mainwidget.openDialog(int(x)))
+        layout.addWidget(searchBar)
         self.setLayout(layout)
 
 class customerList(QListWidget):
@@ -50,10 +54,12 @@ class customerList(QListWidget):
         self.editing = client_id
 
     def handleDoubleClick(self, item: QListWidgetItem):
-        text = item.text()
-        endidx = text.index(',')
-        startidx = text.index(':')+1
-        client_id = int(text[startidx:endidx])
+        self.handleSingleClick(item)
+        self.openDialog()
+    
+    def openDialog(self, client_id = None):
+        if client_id is None:
+            client_id = self.editing
         target = None
         for i in self.clients:
             if i[0] == client_id:
@@ -67,10 +73,9 @@ class customerList(QListWidget):
             'Last Name': target[2],
             'Income': target[3]
         }
-        self.editing = client_id
         popup = enterInfoDialog(self, data, self.saveData)
         popup.open()
-            
+
 
     def saveData(self, data):
         database.updateClient(self.editing, data['First Name'], data['Last Name'], data['Income'])

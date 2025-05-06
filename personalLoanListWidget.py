@@ -4,11 +4,11 @@ from enterInfoDialog import enterInfoDialog
 from searchBarWidget import searchBarWidget
 import datetime
 
-class autoLoanListWidget(QWidget):
+class personalLoanListWidget(QWidget):
     def __init__(self, parent = None):
-        super(autoLoanListWidget, self).__init__(parent)
+        super(personalLoanListWidget, self).__init__(parent)
         layout = QVBoxLayout()
-        mainwidget = autoLoanList()
+        mainwidget = personalLoanList()
         layout.addWidget(mainwidget)
 
         deleteButton = QPushButton(self)
@@ -16,7 +16,7 @@ class autoLoanListWidget(QWidget):
         deleteButton.clicked.connect(mainwidget.deleteLoan)
 
         addButton = QPushButton(self)
-        addButton.setText('Add New Auto Loan')
+        addButton.setText('Add New Personal Loan')
         addButton.clicked.connect(mainwidget.addLoan)
 
         bottomLayout = QHBoxLayout()
@@ -24,13 +24,13 @@ class autoLoanListWidget(QWidget):
         bottomLayout.addWidget(addButton)
         layout.addLayout(bottomLayout)
 
-        layout.addWidget(searchBarWidget(self, 'Search VIN', lambda x: mainwidget.openDialog(x)))
+        layout.addWidget(searchBarWidget(self, 'Search Loan ID', lambda x: mainwidget.openDialog(int(x))))
 
         self.setLayout(layout)
 
-class autoLoanList(QListWidget):
+class personalLoanList(QListWidget):
     def __init__(self, parent = None):
-        super(autoLoanList, self).__init__(parent)        
+        super(personalLoanList, self).__init__(parent)        
         self.itemDoubleClicked.connect(self.handleDoubleClick)
         self.itemClicked.connect(self.handleSingleClick)
         
@@ -38,18 +38,18 @@ class autoLoanList(QListWidget):
         self.refresh()
     
     def refresh(self):
-        self.data = database.getAutoLoans()
+        self.data = database.getPersonalLoans()
         self.clear()
         for i in self.data:
             self.addItem(
-                f'vin: {i[1]}, client: {i[0]}, car: {i[10]} {i[7]} {i[8]}'
+                f'id: {i[1]}, client: {i[0]}, amount: {i[3]}'
             )
     
     def handleSingleClick(self, item):
         text = item.text()
         endidx = text.index(',')
         startidx = text.index(':')+2
-        self.editing = text[startidx:endidx]
+        self.editing = int(text[startidx:endidx])
 
     def handleDoubleClick(self, item: QListWidgetItem):
         self.handleSingleClick(item)
@@ -69,64 +69,54 @@ class autoLoanList(QListWidget):
 
         data = {
             'Client ID': target[0],
-            'Loan Amount': target[2],
-            'Interest Rate': target[3],
-            'Start Date': target[4],
-            'End Date': target[5],
-            'Number of Payments': target[6],
-            'Amount Paid': target[9],
-            'Year': target[10],
-            'Make': target[7],
-            'Model': target[8]
+            'Loan Amount': target[3],
+            'Interest Rate': target[4],
+            'Start Date': target[6],
+            'End Date': target[7],
+            'Number of Payments': target[8],
+            'Amount Paid': target[5],
+            'Purpose': target[2]
         }
 
         popup = enterInfoDialog(self, data, self.saveData)
         popup.open()
 
     def saveData(self, data:dict):
-        vals = list(data.values())
-
-        database.updateAutoLoan(
+        database.updatePersonalLoan(
             int(data['Client ID']),
-            self.editing,
+            data['Purpose'],
             float(data['Loan Amount']),
             float(data['Interest Rate']),
+            float(data['Amount Paid']),
             datetime.datetime.strptime(data['Start Date'], '%Y-%m-%d %H:%M:%S'),
             datetime.datetime.strptime(data['End Date'], '%Y-%m-%d %H:%M:%S'),
             int(data['Number of Payments']),
-            data['Make'],
-            data['Model'],
-            float(data['Amount Paid']),
-            int(data['Year'])
+            self.editing
         )
 
         self.editing = None
         self.refresh()
 
     def newData(self, data):
-        database.addAutoLoan(
+        database.addPersonalLoan(
             int(data['Client ID']),
-            data['VIN'],
+            data['Purpose'],
             float(data['Loan Amount']),
             float(data['Interest Rate']),
+            float(data['Amount Paid']),
             datetime.datetime.strptime(data['Start Date'], '%Y-%m-%d %H:%M:%S'),
             datetime.datetime.strptime(data['End Date'], '%Y-%m-%d %H:%M:%S'),
-            int(data['Number of Payments']),
-            data['Make'],
-            data['Model'],
-            float(data['Amount Paid']),
-            int(data['Year'])
+            int(data['Number of Payments'])
         )
         self.refresh()
     
     def deleteLoan(self):
-        database.deleteAutoLoan(self.editing)
+        database.deletePersonalLoan(self.editing)
         self.editing = None
         self.refresh()
 
     def addLoan(self):
         data = [
-            'VIN',
             'Client ID',
             'Loan Amount',
             'Interest Rate',
@@ -134,9 +124,7 @@ class autoLoanList(QListWidget):
             'End Date',
             'Number of Payments',
             'Amount Paid',
-            'Year',
-            'Make',
-            'Model'
+            'Purpose'
         ]
         popup = enterInfoDialog(self, data, self.newData)
         popup.open()

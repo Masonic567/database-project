@@ -1,4 +1,5 @@
 import oracledb
+from datetime import datetime
 
 SERVER = 'h3oracle.ad.psu.edu'
 SERVICE_NAME = 'orclpdb.ad.psu.edu'
@@ -73,14 +74,9 @@ def getAutoLoans(client_id: int | None = None):
             'SELECT * FROM Auto_Loan order by VIN ASC'
         ).fetchall()
 
-def getAutoLoan(vin: str):
-    return connection.cursor().execute(
-        'SELECT * FROM Auto_Loan WHERE vin = :vin', vin=vin
-    ).fetchone()
-
 def addAutoLoan(
-        client_id: int, VIN: str, loan_amount: float, interest_rate: float, start_date: str, end_date: str,
-        num_payments: int, make: str, model: str, amount_paid: float, year_made: int
+        client_id: int, VIN: str, loan_amount: float, interest_rate: float, start_date: datetime, 
+        end_date: datetime, num_payments: int, make: str, model: str, amount_paid: float, year_made: int
 ):
     connection.cursor().execute(
         'INSERT INTO Auto_Loan VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11)',
@@ -89,8 +85,8 @@ def addAutoLoan(
     connection.commit()
 
 def updateAutoLoan(
-        client_id: int, VIN: str, loan_amount: float, interest_rate: float, start_date: str, end_date: str,
-        num_payments: int, make: str, model: str, amount_paid: float, year_made: int
+        client_id: int, VIN: str, loan_amount: float, interest_rate: float, start_date: datetime, 
+        end_date: datetime, num_payments: int, make: str, model: str, amount_paid: float, year_made: int
 ):
     connection.cursor().execute(
         'UPDATE Auto_Loan SET client_id=:1, loan_amount=:2, interest_rate=:3, start_date=:4, end_date=:5, \
@@ -109,10 +105,108 @@ def getPersonalLoan(loan_id: int):
         'SELECT * FROM Personal_Loan WHERE loan_id = :id', id=loan_id
     ).fetchone()
 
+def getPersonalLoans(client_id: int | None = None):
+    if client_id is not None:
+        return connection.cursor().execute(
+            'SELECT * FROM Personal_Loan WHERE client_id = :id', id=client_id
+        ).fetchall()
+    else:
+        return connection.cursor().execute(
+            'SELECT * FROM Personal_Loan'
+        ).fetchall()
+    
+def addPersonalLoan(client_id: int, loan_purpose: str, loan_amount: str, 
+                    interest_rate: float, amount_paid: float, start_date: datetime, 
+                    end_date: datetime, number_of_payments: int, loan_id: int | None = None):
+    if loan_id is None:
+        loan_id = connection.cursor().execute(
+            'SELECT max(loan_id) FROM Personal_Loan'
+        ).fetchone()[0]
+    
+    if loan_id is None:
+        loan_id = 1
+    else:
+        loan_id += 1
+    
+    connection.cursor().execute(
+        'INSERT INTO Personal_Loan VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9)',
+        [client_id, loan_id, loan_purpose, loan_amount, interest_rate, amount_paid, 
+         start_date, end_date, number_of_payments]
+    )
+
+    connection.commit()
+
+def updatePersonalLoan(client_id: int, loan_purpose: str, loan_amount: str, 
+                    interest_rate: float, amount_paid: float, start_date: datetime, 
+                    end_date: datetime, number_of_payments: int, loan_id: int):
+    connection.cursor().execute(
+        'UPDATE Personal_Loan SET client_id=:1, Loan_Purpose=:2, Loan_Amount=:3, Interest_Rate=:4, \
+            Amount_paid=:5, Start_Date=:6, End_Date=:7, Num_Of_Payments=:8 WHERE loan_id=:9',
+            [client_id, loan_purpose, loan_amount, interest_rate, amount_paid,
+             start_date, end_date, number_of_payments, loan_id]
+    )
+    connection.commit()
+
+def deletePersonalLoan(loan_id: int):
+    connection.cursor().execute(
+        'DELETE FROM Personal_Loan WHERE loan_id = :loan_id', loan_id = loan_id
+    )
+    connection.commit()
+
 def getStudentLoan(loan_id: int):
     return connection.cursor().execute(
         'SELECT * FROM Student_Loan WHERE loan_id = :id', id=loan_id
     ).fetchone()
+
+def getStudentLoans(client_id: int | None = None):
+    if client_id is not None:
+        return connection.cursor().execute(
+            'SELECT * FROM Student_Loan WHERE client_id = :id', id=client_id
+        ).fetchall()
+    else:
+        return connection.cursor().execute(
+            'SELECT * FROM Student_Loan'
+        ).fetchall()
+
+def addStudentLoan(client_id: int, loan_term: int, disbursement_date: datetime,
+                   repayment_start_date: datetime, repayment_end_date: datetime,
+                   monthly_payment: float, grace_period: int, loan_type: str,
+                   loan_id: int | None = None):
+    
+    if loan_id is None:
+        loan_id = connection.cursor().execute(
+            'SELECT max(loan_id) FROM Student_Loan'
+        ).fetchone()[0]
+
+    if loan_id is None:
+        loan_id = 1
+    else:
+        loan_id += 1
+
+    connection.cursor().execute(
+        'INSERT INTO Student_Loan VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9)',
+        [client_id, loan_id, loan_term, disbursement_date, repayment_start_date,
+         repayment_end_date, monthly_payment, grace_period, loan_type]
+    )
+    connection.commit()
+
+def updateStudentLoan(client_id: int, loan_term: int, disbursement_date: datetime,
+                   repayment_start_date: datetime, repayment_end_date: datetime,
+                   monthly_payment: float, grace_period: int, loan_type: str,
+                   loan_id: int):
+    connection.cursor().execute(
+        'UPDATE Student_Loan SET client_id=:1, loan_term=:2, disbursement_date=:3, \
+        Repayment_Start_Date=:4, Repayment_End_Date=:5, Monthly_Payment=:6, \
+        Grace_Period=:7, Loan_type=:8 WHERE loan_id=:9',
+        [client_id, loan_term, disbursement_date, repayment_start_date,
+         repayment_end_date, monthly_payment, grace_period, loan_type, loan_id]
+    )
+    connection.commit()
+
+def deleteStudentLoan(loan_id: int):
+    connection.cursor().execute(
+        'DELETE FROM Student_Loan WHERE loan_id = :loan_id', loan_id = loan_id
+    )
 
 def getMortgage(house_address: str):
     return connection.cursor().execute(
@@ -176,7 +270,7 @@ def createTables():
             Loan_Purpose varchar2(50),
             Loan_Amount float(2),
             Interest_Rate float(2),
-            Amount_piad float(2),
+            Amount_paid float(2),
             Start_Date DATE,
             End_Date DATE,
             Num_Of_Payments Integer,

@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QTabWidge
 from loginDialog import loginDialog
 from customerListWidget import customerListWidget
 from autoLoanListWidget import autoLoanListWidget
+from personalLoanListWidget import personalLoanListWidget
 from sys import argv
 import database
 
@@ -19,6 +20,7 @@ class MainWindow(QMainWindow):
             self.widget.addTab(customerListWidget(), 'Customer List')
 
         self.widget.addTab(autoLoanListWidget(), 'Auto Loans')
+        self.widget.addTab(personalLoanListWidget(), 'Personal Loans')
 
         self.setCentralWidget(self.widget)
 
